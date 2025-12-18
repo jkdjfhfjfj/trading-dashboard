@@ -1,51 +1,49 @@
-const { TelegramClient } = require("telegram");
-const { StringSession } = require("telegram/sessions");
-const input = require("input");
-const { executeSignal } = require("./tradeManager");
-const config = require("./config");
-const OpenAI = require("openai");
+import { TelegramClient } from "telegram";
+import { StringSession } from "telegram/sessions";
+import input from "input"; // npm install input
+import dotenv from "dotenv";
 
-let io;
+dotenv.config();
 
-const client = new TelegramClient(
-  new StringSession(config.telegram.sessionString),
-  config.telegram.apiId,
-  config.telegram.apiHash,
-  { connectionRetries: 5 }
-);
+const apiId = process.env.TELEGRAM_API_ID;       // e.g., 34108253
+const apiHash = process.env.TELEGRAM_API_HASH;   // your hash
+const stringSession = new StringSession("");      // Empty for now; can save session later
 
-const openai = new OpenAI({ apiKey: config.openaiKey });
+/**
+ * Start Telegram listener
+ */
+export async function startTelegramListener() {
+  try {
+    console.log("⚡ Starting Telegram client...");
 
-async function startTelegramListener(userId) {
-  io = global.io;
-  
-  await client.start({
-    phoneNumber: async () => await input.text("Enter your phone number: "),
-    password: async () => await input.text("Enter 2FA password: "),
-    phoneCode: async () => await input.text("Enter the code you received: "),
-    onError: (err) => console.log(err)
-  });
+    const client = new TelegramClient(stringSession, apiId, apiHash, {
+      connectionRetries: 5,
+    });
 
-  const channel = await client.getEntity(config.telegram.inviteLink);
+    await client.start({
+      phoneNumber: async () => await input.text("Enter your phone number: "),
+      password: async () => await input.text("Enter 2FA password: "),
+      phoneCode: async () => await input.text("Enter the code you received: "),
+      onError: (err) => console.log("Telegram login error:", err),
+    });
 
-  client.addEventHandler(async (event) => {
-    try {
+    console.log("✅ Telegram client started");
+
+    // Replace with your public channel invite link
+    const channelLink = process.env.TELEGRAM_CHANNEL_LINK; 
+    const channel = await client.getEntity(channelLink);
+
+    console.log(`Listening to messages from: ${channel.title}`);
+
+    // Listen for new messages
+    client.addEventHandler((event) => {
       const message = event.message.message;
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: "You are an expert forex signal parser." },
-          { role: "user", content: `Extract signal from this text: "${message}" in JSON format with symbol, action, entry, stop_loss, take_profit` }
-        ]
-      });
+      console.log("📨 New message:", message);
 
-      const signalJson = response.choices[0].message.content;
-      const signal = JSON.parse(signalJson);
-      await executeSignal(userId, signal, io);
-    } catch (err) {
-      console.error("Telegram listener error:", err.message);
-    }
-  }, new client.events.NewMessage({ chats: [channel] }));
+      // TODO: Parse message for forex signals, send to trade engine
+    }, new NewMessage({ chats: [channel] }));
+
+  } catch (err) {
+    console.error("❌ Failed to start Telegram listener:", err);
+  }
 }
-
-module.exports = { startTelegramListener };
