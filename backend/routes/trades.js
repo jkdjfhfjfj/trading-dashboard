@@ -7,4 +7,4 @@ router.get("/", async (req, res) => {
   res.json(trades.rows);
 });
 
-module.exports = router;
+export default router;
