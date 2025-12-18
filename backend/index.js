@@ -1,30 +1,53 @@
-const express = require("express");
-const cors = require("cors");
-const http = require("http");
-const { Server } = require("socket.io");
-const { initCTrader } = require("./tradeManager");
-const tradeRoutes = require("./routes/trades");
-const userRoutes = require("./routes/users");
-const config = require("./config");
-const { startTelegramListener } = require("./telegram");
+import express from "express";
+import cors from "cors";
+import path from "path";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+
+import { startTelegramListener } from "./telegram/listener.js";
+import { initDB } from "./db/index.js";
+
+dotenv.config();
 
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const PORT = process.env.PORT || 10000;
 
+/* ---------- PATH FIX ---------- */
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/* ---------- MIDDLEWARE ---------- */
 app.use(cors());
 app.use(express.json());
+
+/* ---------- HEALTH ---------- */
+app.get("/health", (_, res) => res.send("OK"));
+
+/* ---------- API ROUTES ---------- */
+import tradeRoutes from "./routes/trades.js";
 app.use("/api/trades", tradeRoutes);
-app.use("/api/users", userRoutes);
 
-global.io = io;
+/* ---------- START SERVICES ---------- */
+(async () => {
+  try {
+    await initDB();
+    await startTelegramListener();
+    console.log("✅ Services initialized");
+  } catch (err) {
+    console.error("❌ Startup failure:", err);
+    process.exit(1);
+  }
+})();
 
-async function startApp() {
-  await initCTrader(config.ctrader);
-  await startTelegramListener(1); // Replace 1 with actual userId
-}
+/* ---------- SERVE FRONTEND ---------- */
+const frontendPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendPath));
 
-startApp().catch(console.error);
+app.get("*", (_, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => console.log(`Backend running on port ${PORT}`));
+/* ---------- START SERVER ---------- */
+app.listen(PORT, () =>
+  console.log(`🚀 Full-stack app running on ${PORT}`)
+);
