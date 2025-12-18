@@ -1,17 +1,15 @@
 import { TelegramClient } from "telegram";
-import { StringSession } from "telegram/sessions";
-import input from "input"; // npm install input
+import { StringSession } from "telegram/sessions/index.js"; // <-- explicit file import
+import input from "input";
 import dotenv from "dotenv";
+import { NewMessage } from "telegram/events/index.js";
 
 dotenv.config();
 
-const apiId = process.env.TELEGRAM_API_ID;       // e.g., 34108253
-const apiHash = process.env.TELEGRAM_API_HASH;   // your hash
-const stringSession = new StringSession("");      // Empty for now; can save session later
+const apiId = parseInt(process.env.TELEGRAM_API_ID);
+const apiHash = process.env.TELEGRAM_API_HASH;
+const stringSession = new StringSession(""); // Empty session for now
 
-/**
- * Start Telegram listener
- */
 export async function startTelegramListener() {
   try {
     console.log("⚡ Starting Telegram client...");
@@ -29,20 +27,21 @@ export async function startTelegramListener() {
 
     console.log("✅ Telegram client started");
 
-    // Replace with your public channel invite link
-    const channelLink = process.env.TELEGRAM_CHANNEL_LINK; 
+    // Public channel invite link from .env
+    const channelLink = process.env.TELEGRAM_CHANNEL_LINK;
     const channel = await client.getEntity(channelLink);
 
     console.log(`Listening to messages from: ${channel.title}`);
 
-    // Listen for new messages
-    client.addEventHandler((event) => {
-      const message = event.message.message;
-      console.log("📨 New message:", message);
+    client.addEventHandler(
+      (event) => {
+        const message = event.message.message;
+        console.log("📨 New message:", message);
 
-      // TODO: Parse message for forex signals, send to trade engine
-    }, new NewMessage({ chats: [channel] }));
-
+        // TODO: parse message for forex signals and call trade engine
+      },
+      new NewMessage({ chats: [channel] })
+    );
   } catch (err) {
     console.error("❌ Failed to start Telegram listener:", err);
   }
