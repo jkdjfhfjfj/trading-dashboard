@@ -4,8 +4,8 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 
-import { startTelegramListener } from "telegram.js";
-import { initDB } from "index.js";
+import { startTelegramListener } from "./telegram.js";  // Correct path
+import tradeRoutes from "./routes/trades.js";           // Correct path
 
 dotenv.config();
 
@@ -20,21 +20,35 @@ const __dirname = path.dirname(__filename);
 app.use(cors());
 app.use(express.json());
 
-/* ---------- HEALTH ---------- */
+/* ---------- HEALTH CHECK ---------- */
 app.get("/health", (_, res) => res.send("OK"));
 
 /* ---------- API ROUTES ---------- */
-import tradeRoutes from "./routes/trades.js";
 app.use("/api/trades", tradeRoutes);
 
 /* ---------- START SERVICES ---------- */
 (async () => {
   try {
-    await initDB();
-    await startTelegramListener();
+    await startTelegramListener();   // Start Telegram listener
     console.log("✅ Services initialized");
   } catch (err) {
     console.error("❌ Startup failure:", err);
+    process.exit(1);
+  }
+})();
+
+/* ---------- SERVE FRONTEND ---------- */
+const frontendPath = path.join(__dirname, "../frontend/dist");
+app.use(express.static(frontendPath));
+
+app.get("*", (_, res) => {
+  res.sendFile(path.join(frontendPath, "index.html"));
+});
+
+/* ---------- START SERVER ---------- */
+app.listen(PORT, () =>
+  console.log(`🚀 Full-stack app running on port ${PORT}`)
+);    console.error("❌ Startup failure:", err);
     process.exit(1);
   }
 })();
