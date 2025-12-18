@@ -4,8 +4,8 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 
-import { startTelegramListener } from "./telegram.js";   // Your Telegram listener
-import tradeRoutes from "./routes/trades.js";             // Your API routes
+import { startTelegramListener } from "./telegram.js";   // Telegram listener
+import tradeRoutes from "./routes/trades.js";             // API routes
 
 dotenv.config();
 
@@ -26,14 +26,14 @@ app.get("/health", (_, res) => res.send("OK"));
 /* ---------- API ROUTES ---------- */
 app.use("/api/trades", tradeRoutes);
 
-/* ---------- START SERVICES ---------- */
+/* ---------- START TELEGRAM LISTENER ---------- */
 (async () => {
   try {
-    await startTelegramListener();   // Start Telegram listener
+    await startTelegramListener();
     console.log("✅ Telegram listener started");
   } catch (err) {
     console.error("⚠ Telegram listener failed:", err);
-    // Do not exit process — server should still start
+    // Do NOT exit process — server should still start
   }
 })();
 
@@ -41,7 +41,6 @@ app.use("/api/trades", tradeRoutes);
 const frontendPath = path.join(__dirname, "../frontend/dist");
 app.use(express.static(frontendPath));
 
-// Catch-all route to serve index.html for SPA routing
 app.get("*", (_, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
