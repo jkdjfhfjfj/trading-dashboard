@@ -13,4 +13,4 @@ router.post("/", async (req, res) => {
   res.json(result.rows[0]);
 });
 
-module.exports = router;
+default export router;
