@@ -4,8 +4,8 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 
-import { startTelegramListener } from "./telegram/listener.js";
-import { initDB } from "./db/index.js";
+import { startTelegramListener } from "telegram.js";
+import { initDB } from "index.js";
 
 dotenv.config();
 
