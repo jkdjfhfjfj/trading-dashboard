@@ -4,8 +4,8 @@ import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 
-import { startTelegramListener } from "./telegram.js";  // Correct path
-import tradeRoutes from "./routes/trades.js";           // Correct path
+import { startTelegramListener } from "./telegram.js";   // Your Telegram listener
+import tradeRoutes from "./routes/trades.js";             // Your API routes
 
 dotenv.config();
 
@@ -30,10 +30,10 @@ app.use("/api/trades", tradeRoutes);
 (async () => {
   try {
     await startTelegramListener();   // Start Telegram listener
-    console.log("✅ Services initialized");
+    console.log("✅ Telegram listener started");
   } catch (err) {
-    console.error("❌ Startup failure:", err);
-    process.exit(1);
+    console.error("⚠ Telegram listener failed:", err);
+    // Do not exit process — server should still start
   }
 })();
 
@@ -41,27 +41,12 @@ app.use("/api/trades", tradeRoutes);
 const frontendPath = path.join(__dirname, "../frontend/dist");
 app.use(express.static(frontendPath));
 
+// Catch-all route to serve index.html for SPA routing
 app.get("*", (_, res) => {
   res.sendFile(path.join(frontendPath, "index.html"));
 });
 
 /* ---------- START SERVER ---------- */
-app.listen(PORT, () =>
-  console.log(`🚀 Full-stack app running on port ${PORT}`)
-);    console.error("❌ Startup failure:", err);
-    process.exit(1);
-  }
-})();
-
-/* ---------- SERVE FRONTEND ---------- */
-const frontendPath = path.join(__dirname, "../frontend/dist");
-app.use(express.static(frontendPath));
-
-app.get("*", (_, res) => {
-  res.sendFile(path.join(frontendPath, "index.html"));
+app.listen(PORT, () => {
+  console.log(`🚀 Full-stack app running on port ${PORT}`);
 });
-
-/* ---------- START SERVER ---------- */
-app.listen(PORT, () =>
-  console.log(`🚀 Full-stack app running on ${PORT}`)
-);
